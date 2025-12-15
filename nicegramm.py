@@ -10,7 +10,7 @@ from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton, FSInputFil
 BOT_TOKEN = '8202878099:AAES9ybI0KKY9e_ixXrUMXtwqs-TL2r8nQg'
 ADMIN_ID = 8187498719
 # Ссылка на ваш сайт на GitHub (Mini App)
-WEB_APP_URL = "https://github.com/kareli123/nicegram/" 
+WEB_APP_URL = "https://github.com/kareli123/nicegram/index.html" 
 
 # --- НАСТРОЙКИ СЕРВЕРА ---
 # Это самая важная часть для Render:
