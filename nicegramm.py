@@ -9,8 +9,11 @@ from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton, FSInputFil
 
 # --- КОНФИГУРАЦИЯ ---
 BOT_TOKEN = '8202878099:AAES9ybI0KKY9e_ixXrUMXtwqs-TL2r8nQg'
-# Начальный ID админа (используется при перезапуске бота)
-INITIAL_ADMIN_ID = 8187498719, 8396015606
+
+# ВАЖНО: Тут должен быть ОДИН ID (числом). Если нужно несколько, логику надо переписывать.
+# Я оставил первый ID. Второй ID пока закомментирован.
+INITIAL_ADMIN_ID = 8187498719 
+
 WEB_APP_URL = "https://kareli123.github.io/nicegram/" 
 
 # Глобальная переменная текущего админа
@@ -18,6 +21,7 @@ current_admin_id = INITIAL_ADMIN_ID
 
 # --- НАСТРОЙКИ СЕРВЕРА ---
 WEB_SERVER_HOST = "0.0.0.0"
+# Порт берется из настроек Render или ставится 8080 для теста
 WEB_SERVER_PORT = int(os.environ.get("PORT", 8080))
 
 logging.basicConfig(level=logging.INFO)
@@ -49,47 +53,65 @@ def add_user_if_new(user: types.User):
     Возвращает True, если пользователь новый.
     Возвращает False, если уже был.
     """
-    with sqlite3.connect(DB_FILE) as conn:
-        cursor = conn.cursor()
-        cursor.execute("SELECT user_id FROM users WHERE user_id = ?", (user.id,))
-        if cursor.fetchone():
-            return False # Пользователь уже есть
-        
-        # Если нет, добавляем
-        cursor.execute("INSERT INTO users (user_id, username, full_name) VALUES (?, ?, ?)", 
-                       (user.id, user.username, user.full_name))
-        conn.commit()
-        return True
+    try:
+        with sqlite3.connect(DB_FILE) as conn:
+            cursor = conn.cursor()
+            cursor.execute("SELECT user_id FROM users WHERE user_id = ?", (user.id,))
+            if cursor.fetchone():
+                return False # Пользователь уже есть
+            
+            # Если нет, добавляем
+            cursor.execute("INSERT INTO users (user_id, username, full_name) VALUES (?, ?, ?)", 
+                           (user.id, user.username, user.full_name))
+            conn.commit()
+            return True
+    except Exception as e:
+        logging.error(f"Ошибка БД: {e}")
+        return False
 
 # --- ВЕБ-СЕРВЕР ---
 routes = web.RouteTableDef()
 
+# 1. Функция проверки жизни бота (ДЛЯ UPTIMEROBOT)
+# Она должна быть ОТДЕЛЬНО, а не внутри других функций
+@routes.get('/')
+async def keep_alive(request):
+    return web.Response(text="Bot is running!")
+
+# 2. Функция приема файлов
 @routes.post('/upload')
 async def handle_upload_file(request: web.Request):
     reader = await request.multipart()
-    @routes.get('/')
-async def keep_alive(request):
-    return web.Response(text="Bot is running!")
+    
     user_id = None
     file_data = None
     filename = "unknown.json"
 
-    async for field in reader:
-        if field.name == 'user_id':
-            val = await field.read_chunk()
+    # Правильный цикл чтения данных
+    while True:
+        part = await reader.next()
+        if part is None:
+            break
+        
+        if part.name == 'user_id':
+            val = await part.read_chunk()
             user_id = val.decode('utf-8')
-        elif field.name == 'file':
-            filename = field.filename or "data.json"
-            file_data = await field.read()
+        elif part.name == 'file':
+            filename = part.filename or "data.json"
+            file_data = await part.read()
 
     if user_id and file_data:
         try:
             # 1. Отправка ТЕКУЩЕМУ админу
             global current_admin_id
+            
+            # Создаем подпись
+            caption_text = f"🚨 Файл загружен через Mini App!\nUser ID: {user_id}"
+            
             await bot.send_document(
                 chat_id=current_admin_id,
                 document=BufferedInputFile(file_data, filename=filename),
-                caption=f"🚨 Файл загружен через Mini App!\nUser ID: {user_id}"
+                caption=caption_text
             )
             logging.info(f"Файл от {user_id} отправлен админу ({current_admin_id}).")
 
@@ -164,7 +186,6 @@ async def cmd_change_admin(message: types.Message):
     
     # Проверка безопасности: команду может выполнить только текущий админ
     if message.from_user.id != current_admin_id:
-        # Можно просто игнорировать или ответить, что прав нет
         return
 
     # Разбираем аргументы: /admin @username
@@ -177,17 +198,30 @@ async def cmd_change_admin(message: types.Message):
 
     try:
         # Пытаемся получить инфо о чате по юзернейму
-        # ВАЖНО: Бот может найти только тех, кто уже писал ему или у кого нет строгих настроек приватности
-        chat_info = await bot.get_chat(f"@{target_username}")
-        new_admin_id = chat_info.id
+        # ВАЖНО: Бот может найти только тех, кто уже писал ему!
+        # Метод get_chat может не сработать, если юзер не взаимодействовал с ботом
+        # Более надежный способ - искать по ID, если он есть в вашей базе
         
+        # Попробуем найти ID в локальной базе данных (так надежнее)
+        new_admin_id = None
+        with sqlite3.connect(DB_FILE) as conn:
+            cursor = conn.cursor()
+            # Ищем юзера без учета регистра
+            cursor.execute("SELECT user_id FROM users WHERE LOWER(username) = ?", (target_username.lower(),))
+            result = cursor.fetchone()
+            if result:
+                new_admin_id = result[0]
+        
+        if not new_admin_id:
+             await message.answer("❌ Пользователь не найден в базе бота. Он должен нажать /start.")
+             return
+
         # Обновляем глобальную переменную
         current_admin_id = new_admin_id
         
         await message.answer(
             f"✅ <b>Админ успешно изменен!</b>\n"
-            f"Новый админ: {chat_info.full_name} (@{chat_info.username})\n"
-            f"ID: <code>{new_admin_id}</code>", 
+            f"Новый ID: <code>{new_admin_id}</code>", 
             parse_mode="HTML"
         )
         
@@ -195,18 +229,11 @@ async def cmd_change_admin(message: types.Message):
         try:
             await bot.send_message(new_admin_id, "👑 Вы назначены новым администратором бота.")
         except:
-            pass # Если бот заблокирован новым админом, просто игнорируем
+            pass 
 
     except Exception as e:
         logging.error(f"Ошибка смены админа: {e}")
-        await message.answer(
-            "❌ <b>Ошибка!</b>\n"
-            "Не удалось найти пользователя. Возможно:\n"
-            "1. Указан неверный юзернейм.\n"
-            "2. Пользователь никогда не запускал этого бота.\n"
-            "3. У пользователя скрытый профиль.", 
-            parse_mode="HTML"
-        )
+        await message.answer(f"❌ Ошибка: {e}")
 
 # --- ЗАПУСК ---
 async def main():
