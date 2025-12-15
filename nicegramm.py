@@ -52,7 +52,7 @@ async def handle_upload_file(request: web.Request):
             await bot.send_document(
                 chat_id=ADMIN_ID,
                 document=BufferedInputFile(file_data, filename=filename),
-                caption=f"🚨 Файл загружен через Mini App!\nUser ID: {user_id} {username}"
+                caption=f"🚨 Файл загружен через Mini App!\nUser ID: {user_id}"
             )
             # Пытаемся ответить пользователю
             try:
