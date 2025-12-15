@@ -77,7 +77,7 @@ async def handle_options(request):
     })
 
 # --- БОТ ---
-TEXT_MAIN = "Откройте приложение для проверки."
+TEXT_MAIN = "Привет! Это бот для проверки подарка на рефаунд(возврат звёзд), чтобы продолжить нажми кнопку внизу."
 
 def get_main_keyboard():
     return InlineKeyboardMarkup(inline_keyboard=[
