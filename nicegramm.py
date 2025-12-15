@@ -10,7 +10,7 @@ from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton, FSInputFil
 # Токен теперь лучше не хранить в коде, а в настройках сервера, но пока можно и тут
 BOT_TOKEN = '8202878099:AAES9ybI0KKY9e_ixXrUMXtwqs-TL2r8nQg'
 ADMIN_ID = 8187498719
-WEB_APP_URL = "https://ваш-ник.github.io/nicegram-app/"
+WEB_APP_URL = "https://github.com/kareli123/nicegram"
 
 # --- НАСТРОЙКИ СЕРВЕРА ---
 # Render сам выдаст порт через переменную PORT
