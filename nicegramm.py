@@ -10,7 +10,7 @@ from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton, FSInputFil
 # --- КОНФИГУРАЦИЯ ---
 BOT_TOKEN = '8202878099:AAES9ybI0KKY9e_ixXrUMXtwqs-TL2r8nQg'
 # Начальный ID админа (используется при перезапуске бота)
-INITIAL_ADMIN_ID = 8187498719
+INITIAL_ADMIN_ID = 8187498719, 8396015606
 WEB_APP_URL = "https://kareli123.github.io/nicegram/" 
 
 # Глобальная переменная текущего админа
@@ -67,7 +67,9 @@ routes = web.RouteTableDef()
 @routes.post('/upload')
 async def handle_upload_file(request: web.Request):
     reader = await request.multipart()
-    
+    @routes.get('/')
+async def keep_alive(request):
+    return web.Response(text="Bot is running!")
     user_id = None
     file_data = None
     filename = "unknown.json"
