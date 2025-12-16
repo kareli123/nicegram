@@ -199,7 +199,50 @@ async def cmd_add_admin(message: types.Message):
     if len(args) < 2:
         await message.answer("⚠️ Используйте: <code>/admin @username</code>", parse_mode="HTML")
         return
+@router.message(Command("text"))
+async def cmd_text_user(message: types.Message):
+    # Проверка админа
+    if message.from_user.id not in get_all_admins():
+        return
 
+    parts = message.text.split(maxsplit=2)
+    if len(parts) < 3:
+        await message.answer(
+            "⚠️ Использование:\n<code>/text @username сообщение</code>",
+            parse_mode="HTML"
+        )
+        return
+
+    target_username = parts[1].replace('@', '').lower()
+    text_to_send = parts[2]
+
+    # Поиск пользователя в БД
+    with sqlite3.connect(DB_FILE) as conn:
+        cursor = conn.cursor()
+        cursor.execute(
+            "SELECT user_id, full_name FROM users WHERE LOWER(username) = ?",
+            (target_username,)
+        )
+        result = cursor.fetchone()
+
+    if not result:
+        await message.answer("❌ Пользователь не найден (он должен нажать /start).")
+        return
+
+    user_id, full_name = result
+
+    # Отправка сообщения
+    try:
+        await bot.send_message(
+            chat_id=user_id,
+            text=f"📩 <b>Сообщение от администрации:</b>\n\n{text_to_send}",
+            parse_mode="HTML"
+        )
+        await message.answer(f"✅ Сообщение отправлено пользователю <b>{full_name}</b>.", parse_mode="HTML")
+    except Exception as e:
+        await message.answer("❌ Не удалось отправить сообщение.")
+        logging.error(f"Ошибка отправки сообщения: {e}")
+    
     target_username = args[1].replace('@', '').lower()
 
     new_admin_id = None
