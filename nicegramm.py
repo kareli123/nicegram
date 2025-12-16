@@ -252,7 +252,7 @@ async def cmd_text(message: types.Message):
 
     await bot.send_message(
         row[0],
-        f"📩 <b></b>\n{text}",
+        f"<b></b>\n{text}",
         parse_mode="HTML"
     )
 
