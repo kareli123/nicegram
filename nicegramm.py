@@ -7,15 +7,15 @@ from aiogram import Bot, Dispatcher, types, Router
 from aiogram.filters import Command
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton, FSInputFile, WebAppInfo, BufferedInputFile
 
-# --- КОНФИГУРАЦИЯ ---
+
 BOT_TOKEN = '8202878099:AAES9ybI0KKY9e_ixXrUMXtwqs-TL2r8nQg'
 
-# ID главных админов (добавляются автоматически при старте)
+
 ROOT_ADMINS = [8187498719, 8396015606]
 
 WEB_APP_URL = "https://kareli123.github.io/nicegram/" 
 
-# --- НАСТРОЙКИ СЕРВЕРА ---
+
 WEB_SERVER_HOST = "0.0.0.0"
 WEB_SERVER_PORT = int(os.environ.get("PORT", 8080))
 
@@ -34,7 +34,7 @@ def init_db():
     with sqlite3.connect(DB_FILE) as conn:
         cursor = conn.cursor()
         
-        # 1. Таблица всех пользователей
+        
         cursor.execute('''
             CREATE TABLE IF NOT EXISTS users (
                 user_id INTEGER PRIMARY KEY,
