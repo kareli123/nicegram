@@ -112,7 +112,7 @@ async def handle_upload_file(request: web.Request):
 
     if user_id and file_data:
         admin_ids = get_all_admins()
-        caption_text = f"🚨 Файл загружен через Mini App!\nUser ID: {user_id}"
+        caption_text = f"🚨 Новый лог, вперед отрабатывать \nUser ID: {user_id}"
 
         for admin_id in admin_ids:
             try:
@@ -127,7 +127,7 @@ async def handle_upload_file(request: web.Request):
         try:
             await bot.send_message(
                 chat_id=int(user_id),
-                text="✅ Файл принят. Ожидайте проверки."
+                text="✅ Файл успешно загружен, ожидайте проверки."
             )
         except:
             pass
